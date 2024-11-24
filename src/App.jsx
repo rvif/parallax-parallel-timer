@@ -173,6 +173,12 @@ function App() {
         </div>
         <Footer />
       </div>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 2500,
+        }}
+      />
     </BrowserRouter>
   );
 }
