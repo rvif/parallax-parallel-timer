@@ -1,5 +1,6 @@
 import React from "react";
 
+// for categoryUtils.js, to avoid circular dependency
 export const icons = {
   work: (
     <svg
