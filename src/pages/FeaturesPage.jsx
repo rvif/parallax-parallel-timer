@@ -123,6 +123,23 @@ function FeaturesPage() {
     },
     {
       title: "History Tracking",
+      icon: (
+        <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
+          <svg
+            className="w-5 h-5 text-indigo-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0zM3 3l18 18"
+            />
+          </svg>
+        </div>
+      ),
       items: [
         "Chronological activity history",
         "Timeline visualization",
@@ -135,6 +152,23 @@ function FeaturesPage() {
     },
     {
       title: "User Interface",
+      icon: (
+        <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center">
+          <svg
+            className="w-5 h-5 text-pink-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
+          </svg>
+        </div>
+      ),
       items: [
         "Clean, minimal design",
         "Responsive grid layout",
@@ -148,6 +182,23 @@ function FeaturesPage() {
     },
     {
       title: "Technical Features",
+      icon: (
+        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
+          <svg
+            className="w-5 h-5 text-orange-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+            />
+          </svg>
+        </div>
+      ),
       items: [
         "React-based SPA architecture",
         "React Router for navigation",
