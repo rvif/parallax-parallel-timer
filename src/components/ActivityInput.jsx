@@ -43,7 +43,7 @@ function ActivityInput({ onAdd, onClearAll }) {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 text-sm">
         <input
           type="text"
           value={title}

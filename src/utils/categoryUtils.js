@@ -40,42 +40,41 @@ export const categories = [
 ];
 
 export const getCategoryColor = (categoryId) => {
-  const category = categories.find((c) => c.id === categoryId);
-  switch (category?.id) {
+  switch (categoryId) {
     case "work":
       return {
-        label: "bg-blue-50 text-blue-600 border-blue-100",
+        label: "bg-blue-50 text-blue-600",
         progress: "from-blue-400 to-blue-600",
       };
     case "study":
       return {
-        label: "bg-green-50 text-green-600 border-green-100",
+        label: "bg-green-50 text-green-600",
         progress: "from-green-400 to-green-600",
       };
     case "exercise":
       return {
-        label: "bg-orange-50 text-orange-600 border-orange-100",
+        label: "bg-orange-50 text-orange-600",
         progress: "from-orange-400 to-orange-600",
       };
     case "personal":
       return {
-        label: "bg-purple-50 text-purple-600 border-purple-100",
+        label: "bg-purple-50 text-purple-600",
         progress: "from-purple-400 to-purple-600",
       };
     case "meeting":
       return {
-        label: "bg-indigo-50 text-indigo-600 border-indigo-100",
+        label: "bg-indigo-50 text-indigo-600",
         progress: "from-indigo-400 to-indigo-600",
       };
     case "break":
       return {
-        label: "bg-pink-50 text-pink-600 border-pink-100",
+        label: "bg-pink-50 text-pink-600",
         progress: "from-pink-400 to-pink-600",
       };
     default:
       return {
-        label: "bg-gray-50 text-gray-600 border-gray-100",
-        progress: "from-gray-400 to-gray-600",
+        label: "bg-red-50 text-red-600",
+        progress: "from-red-400 to-red-600",
       };
   }
 };

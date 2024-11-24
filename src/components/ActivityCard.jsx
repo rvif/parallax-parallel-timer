@@ -1,11 +1,6 @@
-import React, { useEffect, useRef } from "react";
-import { toast } from "react-hot-toast";
-import { audioManager } from "../utils/audioManager";
-import {
-  categories,
-  getCategoryColor,
-  formatTime,
-} from "../utils/categoryUtils";
+import React, { useEffect } from "react";
+import { categories, getCategoryColor } from "../utils/categoryUtils";
+import { timerService } from "../utils/timerService";
 
 function ActivityCard({
   activity,
@@ -14,42 +9,15 @@ function ActivityCard({
   onTimeUpdate,
   onComplete,
 }) {
-  const intervalRef = useRef(null);
+  const categoryColors = getCategoryColor(activity.category);
 
   useEffect(() => {
-    if (isActive) {
-      intervalRef.current = setInterval(() => {
-        if (activity.remainingTime <= 1) {
-          clearInterval(intervalRef.current);
-
-          // Use the global audio manager
-          audioManager.play();
-
-          toast.success(`${activity.title} completed!`, {
-            icon: "🎉",
-            style: {
-              borderRadius: "10px",
-              background: "#333",
-              color: "#fff",
-            },
-          });
-
-          onComplete(activity.id);
-        } else {
-          onTimeUpdate(activity.id, activity.remainingTime - 1);
-        }
-      }, 1000);
-
-      return () => clearInterval(intervalRef.current);
+    if (isActive && activity.remainingTime > 0) {
+      timerService.startTimer(activity, onTimeUpdate, onComplete, false);
     }
-  }, [isActive, activity.remainingTime, activity.id, activity.title]);
+  }, [isActive, activity.id, activity.remainingTime]);
 
-  const progressPercent =
-    ((activity.totalTime - activity.remainingTime) / activity.totalTime) * 100;
-
-  if (isNaN(activity.remainingTime)) {
-    return null;
-  }
+  if (!activity.remainingTime) return null;
 
   return (
     <div
@@ -58,48 +26,38 @@ function ActivityCard({
         hover:shadow-md transform transition-all duration-300 hover:scale-[1.02] 
         cursor-pointer bg-white"
     >
-      <div className="flex flex-col h-full">
-        <div className="text-lg font-medium text-[#2c3e50] mb-2">
-          {activity.title}
+      <div className="text-lg font-medium text-[#2c3e50] mb-2">
+        {activity.title}
+      </div>
+
+      {activity.category && (
+        <div className="mb-3">
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium ${categoryColors.label}`}
+          >
+            {categories.find((c) => c.id === activity.category)?.icon}
+            {categories.find((c) => c.id === activity.category)?.label}
+          </span>
         </div>
+      )}
 
-        {/* Only show label if category exists */}
-        {activity.category && (
-          <div className="mb-3">
-            <span
-              className={`
-              inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium
-              border ${getCategoryColor(activity.category).label}
-            `}
-            >
-              {categories.find((c) => c.id === activity.category)?.icon}
-              {categories.find((c) => c.id === activity.category)?.label}
-            </span>
-          </div>
-        )}
-
-        {/* Timer and Progress Bar */}
-        <div className="mt-auto">
-          <div className="text-lg sm:text-xl font-mono">
-            {formatTime(activity.remainingTime)}
-          </div>
-
-          {isActive && (
-            <div className="mt-2">
-              <div className="bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className={`h-full bg-gradient-to-r ${
-                    activity.category
-                      ? getCategoryColor(activity.category).progress
-                      : "from-red-400 to-red-600"
-                  } 
-                    transition-all duration-1000`}
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          )}
+      {isActive && (
+        <div className="h-2 rounded-full overflow-hidden bg-gray-100">
+          <div
+            className={`h-full rounded-full transition-all duration-1000 ease-linear
+              bg-gradient-to-r ${categoryColors.progress}`}
+            style={{
+              width: `${
+                (1 - activity.remainingTime / activity.totalTime) * 100
+              }%`,
+            }}
+          />
         </div>
+      )}
+
+      <div className="mt-3 text-sm text-gray-600">
+        {Math.floor(activity.remainingTime / 60)}:
+        {String(activity.remainingTime % 60).padStart(2, "0")}
       </div>
     </div>
   );
