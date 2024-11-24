@@ -1,226 +1,180 @@
-import React, { useEffect, useState } from "react";
-import { DndContext, closestCorners } from "@dnd-kit/core";
-import Input from "./components/Input";
-import Cards from "./components/Cards";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React, { useState, useEffect } from "react";
+import ActivityInput from "./components/ActivityInput";
+import ActivityList from "./components/ActivityList";
+import ActivityHistory from "./pages/HistoryPage";
+import "./App.css";
+import { Toaster } from "react-hot-toast";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import FeaturesPage from "./pages/FeaturesPage";
+import Footer from "./components/Footer";
 
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-
-const App = () => {
+function App() {
+  // Main activities list
   const [activities, setActivities] = useState(() => {
-    const storedActivities = localStorage.getItem("activities");
-    return storedActivities ? JSON.parse(storedActivities) : [];
+    const saved = localStorage.getItem("activities");
+    return saved ? JSON.parse(saved) : [];
   });
 
-  const [ongoingActivities, setOnGoingActivities] = useState(() => {
-    const storedOngoingActivities = localStorage.getItem("ongoingActivities");
-    return storedOngoingActivities ? JSON.parse(storedOngoingActivities) : [];
+  // Active/ongoing activities
+  const [activeActivities, setActiveActivities] = useState(() => {
+    const saved = localStorage.getItem("activeActivities");
+    return saved ? JSON.parse(saved) : [];
   });
 
-  // Update local storage whenever activities or ongoingActivities change
+  // Completed activities
+  const [completedActivities, setCompletedActivities] = useState([]);
+
+  // Save to localStorage whenever states change
   useEffect(() => {
     localStorage.setItem("activities", JSON.stringify(activities));
   }, [activities]);
 
   useEffect(() => {
-    localStorage.setItem(
-      "ongoingActivities",
-      JSON.stringify(ongoingActivities)
-    );
-  }, [ongoingActivities]);
+    localStorage.setItem("activeActivities", JSON.stringify(activeActivities));
+  }, [activeActivities]);
 
-  //? Placeholders
-  // const [activities, setActivities] = useState([
-  //   { id: 1, title: "Activity 1", time: [20, 30, 30], flag: false },
-  //   { id: 2, title: "Activity 2", time: [20, 30, 30], flag: false },
-  //   { id: 3, title: "Activity 3", time: [20, 30, 30], flag: false },
-  // ]);
-
-  // const [ongoingActivities, setOnGoingActivities] = useState([
-  //   { id: 4, title: "Activity test", time: [10, 20, 20], flag: true },
-  // ]);
-
-  const [timeData, setTimeData] = useState([]);
-  const handleTimeData = (data) => {
-    setTimeData((prevData) => {
-      const newData = [...prevData];
-      const index = newData.findIndex((item) => item.id === data.id);
-      if (index !== -1) {
-        newData[index] = data;
-      } else {
-        newData.push(data);
-      }
-      return newData;
-    });
-  };
-  // console.log(timeData);
-
-  const addActivity = (title, time) => {
-    setActivities((activities) => [
-      ...activities,
-      { id: activities.length + 1, title, time, flag: false },
-    ]);
-  };
-  const clearAllActivities = () => {
-    setActivities([]);
-    setOnGoingActivities([]);
+  const addActivity = (title, timeInSeconds, category) => {
+    const newActivity = {
+      id: Date.now(),
+      title,
+      totalTime: timeInSeconds,
+      remainingTime: timeInSeconds,
+      category,
+    };
+    setActivities((prev) => [...prev, newActivity]);
   };
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-
-    if (!over) return;
-
-    const activeList = activities.some((activity) => activity.id === active.id)
-      ? activities
-      : ongoingActivities;
-    const setActiveList = activities.some(
-      (activity) => activity.id === active.id
-    )
-      ? setActivities
-      : setOnGoingActivities;
-
-    const overList = activities.some((activity) => activity.id === over.id)
-      ? activities
-      : ongoingActivities;
-    const setOverList = activities.some((activity) => activity.id === over.id)
-      ? setActivities
-      : setOnGoingActivities;
-
-    const oldIndex = activeList.findIndex(
-      (activity) => activity.id === active.id
-    );
-    const newIndex = overList.findIndex((activity) => activity.id === over.id);
-
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    setActiveList((prevActivities) => {
-      const updatedActivities = [...prevActivities];
-      const [movedItem] = updatedActivities.splice(oldIndex, 1);
-      updatedActivities.splice(newIndex, 0, movedItem);
-      return updatedActivities;
-    });
-  };
-
-  const doubleClickHandler = (id, status) => {
-    if (status === "paused_activity") {
-      setTimeData(() => {
-        return timeData.filter((data) => data.id !== id);
-      });
-      const activity = ongoingActivities.find((act) => act.id === id);
-      if (activity) {
-        const timeObj = timeData.find((data) => data.id === id);
-        const updatedActivity = {
-          ...activity,
-          time: timeObj.time,
-          flag: false,
-        };
-        console.log(timeObj);
-        console.log(updatedActivity);
-        setOnGoingActivities((prev) => prev.filter((act) => act.id !== id));
-        setActivities((prev) => [...prev, updatedActivity]);
-      }
-    } else if (status === "ongoing_activity") {
-      const activity = activities.find((act) => act.id === id);
-      if (activity) {
-        setActivities((prev) => prev.filter((act) => act.id !== id));
-        setOnGoingActivities((prev) => [...prev, { ...activity, flag: true }]);
-      }
+  const toggleActivity = (activity) => {
+    if (activeActivities.find((a) => a.id === activity.id)) {
+      // If activity is active, move it back to inactive list
+      const updatedActivity = activeActivities.find(
+        (a) => a.id === activity.id
+      );
+      setActiveActivities((prev) => prev.filter((a) => a.id !== activity.id));
+      setActivities((prev) => [...prev, updatedActivity]);
+    } else {
+      // If activity is inactive, move it to active list
+      setActivities((prev) => prev.filter((a) => a.id !== activity.id));
+      setActiveActivities((prev) => [...prev, activity]);
     }
   };
 
-  const removeDeadActivities = (idToRemove) => {
-    console.log(idToRemove);
-    setOnGoingActivities((prevActivities) =>
-      prevActivities.filter((activity) => activity.id !== idToRemove)
+  const updateRemainingTime = (id, remainingTime) => {
+    setActiveActivities((prev) =>
+      prev.map((activity) =>
+        activity.id === id ? { ...activity, remainingTime } : activity
+      )
     );
   };
+
+  const removeCompletedActivity = (activityId) => {
+    const activity = activeActivities.find((a) => a.id === activityId);
+    if (activity) {
+      setCompletedActivities((prev) => [
+        ...prev,
+        {
+          ...activity,
+          completedAt: new Date().toISOString(),
+        },
+      ]);
+      setActiveActivities((prev) => prev.filter((a) => a.id !== activityId));
+    }
+  };
+
+  const clearAllActivities = () => {
+    setActivities([]);
+    setActiveActivities([]);
+    localStorage.removeItem("activities");
+    localStorage.removeItem("activeActivities");
+  };
+
+  const [showHistory, setShowHistory] = useState(false);
+
   return (
-    <div className="flex h-screen">
-      {/* Left Partition - Form */}
-      <div className="w-1/4 p-4 ml-2">
-        <Input onSubmit={addActivity} clearAll={clearAllActivities} />
-      </div>
+    <BrowserRouter>
+      <div className="min-h-screen flex flex-col bg-[#f8f9ff] font-['Poppins']">
+        <Navbar />
+        <div className="flex-grow">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <div className="container mx-auto p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Input Column - Fixed height */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 h-fit">
+                      <h2 className="text-xl font-medium mb-4 text-[#2c3e50]">
+                        Add New Activity
+                      </h2>
+                      <ActivityInput
+                        onAdd={addActivity}
+                        onClearAll={clearAllActivities}
+                      />
+                    </div>
 
-      {/* Center Partition - Cards */}
-      <div className="w-1/3 p-4 grid grid-cols-1 gap-4 justify-items-center content-start overflow-y-auto overflow-x-hidden">
-        <DndContext
-          collisionDetection={closestCorners}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={activities}
-            strategy={verticalListSortingStrategy}
-          >
-            {activities.map((activity) => (
-              <Cards
-                key={activity.id}
-                obj={activity}
-                id={activity.id}
-                onDoubleClick={() =>
-                  doubleClickHandler(activity.id, "ongoing_activity")
-                }
-                handleTimeData={handleTimeData}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-      </div>
+                    {/* Pending Activities Column */}
+                    <div className="bg-[#ffe6fd] rounded-xl shadow-sm p-6 border border-pink-100 h-fit">
+                      <h2 className="text-xl font-medium mb-4 text-[#2c3e50]">
+                        Pending Activities
+                      </h2>
+                      {activities.length === 0 ? (
+                        <div className="flex items-center justify-center h-[300px]">
+                          <p className="text-gray-500 text-center text-sm select-none">
+                            No pending activities
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <ActivityList
+                            activities={activities}
+                            onDoubleClick={toggleActivity}
+                            isActive={false}
+                          />
+                        </div>
+                      )}
+                    </div>
 
-      {/* Right Partition - Stage Area */}
-      <div
-        className={`w-1/3 p-4 bg-[#ffe6fd] ml-4 content-start overflow-y-auto overflow-x-hidden ${
-          ongoingActivities.length === 0
-            ? "flex items-center justify-center"
-            : "grid grid-cols-1 gap-4 justify-items-center"
-        }`}
-      >
-        {/* Double click activities to shift them to ongoing activity (right partition) and vice versa */}
-        {ongoingActivities.length === 0 ? (
-          <p className="text-gray-500 text-center">
-            Double click on activities to add
-          </p>
-        ) : (
-          <DndContext
-            collisionDetection={closestCorners}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={ongoingActivities}
-              strategy={verticalListSortingStrategy}
-            >
-              {ongoingActivities.map((activity) => (
-                <Cards
-                  key={activity.id}
-                  obj={activity}
-                  id={activity.id}
-                  onDoubleClick={() =>
-                    doubleClickHandler(activity.id, "paused_activity")
-                  }
-                  handleTimeData={handleTimeData}
-                  removeDeadActivities={removeDeadActivities}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        )}
+                    {/* Active Activities Column */}
+                    <div className="bg-[#e6f7ff] rounded-xl shadow-sm p-6 border border-blue-100 h-fit">
+                      <h2 className="text-xl font-medium mb-4 text-[#2c3e50]">
+                        Active Activities
+                      </h2>
+                      {activeActivities.length === 0 ? (
+                        <div className="flex items-center justify-center h-[300px]">
+                          <p className="text-gray-500 text-center text-sm select-none">
+                            Double-click an activity to start
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <ActivityList
+                            activities={activeActivities}
+                            onDoubleClick={toggleActivity}
+                            isActive={true}
+                            onTimeUpdate={updateRemainingTime}
+                            onComplete={removeCompletedActivity}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              }
+            />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route
+              path="/history"
+              element={
+                <ActivityHistory completedActivities={completedActivities} />
+              }
+            />
+          </Routes>
+        </div>
+        <Footer />
       </div>
-      <ToastContainer
-        position="bottom-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnHover={false}
-        pauseOnFocusLoss={false}
-      />
-    </div>
+    </BrowserRouter>
   );
-};
+}
 
 export default App;
