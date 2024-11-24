@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import ActivityInput from "./components/ActivityInput";
 import ActivityList from "./components/ActivityList";
 import ActivityHistory from "./pages/HistoryPage";
-import "./App.css";
 import { Toaster } from "react-hot-toast";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import FeaturesPage from "./pages/FeaturesPage";
 import Footer from "./components/Footer";
+import FloatingTimers from "./components/FloatingTimers";
+import { timerService } from "./utils/timerService";
+import "./App.css";
 
 function App() {
   // Main activities list
@@ -61,25 +63,47 @@ function App() {
   };
 
   const updateRemainingTime = (id, remainingTime) => {
-    setActiveActivities((prev) =>
-      prev.map((activity) =>
+    setActiveActivities((prev) => {
+      const updatedActivities = prev.map((activity) =>
         activity.id === id ? { ...activity, remainingTime } : activity
-      )
-    );
+      );
+
+      //filter out any activities that hit zero
+      return updatedActivities.filter((activity) => {
+        if (activity.remainingTime <= 0) {
+          // Move to completed activities
+          setCompletedActivities((prevCompleted) => [
+            {
+              ...activity,
+              completedAt: new Date().toISOString(),
+            },
+            ...prevCompleted,
+          ]);
+          return false;
+        }
+        return true;
+      });
+    });
   };
 
   const removeCompletedActivity = (activityId) => {
-    const activity = activeActivities.find((a) => a.id === activityId);
-    if (activity) {
-      setCompletedActivities((prev) => [
-        ...prev,
-        {
-          ...activity,
-          completedAt: new Date().toISOString(),
-        },
-      ]);
-      setActiveActivities((prev) => prev.filter((a) => a.id !== activityId));
-    }
+    setActiveActivities((prev) => {
+      const activity = prev.find((a) => a.id === activityId);
+      if (activity) {
+        // Add to completed activites
+        setCompletedActivities((prevCompleted) => [
+          {
+            ...activity,
+            completedAt: new Date().toISOString(),
+          },
+          ...prevCompleted, // Add new items at the start
+        ]);
+
+        // reemove from active activities
+        return prev.filter((a) => a.id !== activityId);
+      }
+      return prev;
+    });
   };
 
   const clearAllActivities = () => {
@@ -89,7 +113,37 @@ function App() {
     localStorage.removeItem("activeActivities");
   };
 
-  const [showHistory, setShowHistory] = useState(false);
+  // do cleanup on unmount
+  useEffect(() => {
+    return () => {
+      timerService.cleanup();
+    };
+  }, []);
+
+  // cleanup for stuck activities
+  useEffect(() => {
+    const cleanupStuckActivities = () => {
+      setActiveActivities((prev) =>
+        prev.filter((activity) => {
+          if (activity.remainingTime <= 0) {
+            // move to completed activities before removing
+            setCompletedActivities((prevCompleted) => [
+              {
+                ...activity,
+                completedAt: new Date().toISOString(),
+              },
+              ...prevCompleted,
+            ]);
+            return false;
+          }
+          return true;
+        })
+      );
+    };
+
+    // cleanup on mount and when activeActivities changes
+    cleanupStuckActivities();
+  }, []);
 
   return (
     <BrowserRouter>
@@ -102,9 +156,9 @@ function App() {
               element={
                 <div className="container mx-auto p-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Input Column - Fixed height */}
+                    {/* Input form - Fixed height */}
                     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 h-fit">
-                      <h2 className="text-xl font-medium mb-4 text-[#2c3e50]">
+                      <h2 className="text-lg font-medium mb-4 text-[#2c3e50]">
                         Add New Activity
                       </h2>
                       <ActivityInput
@@ -172,11 +226,21 @@ function App() {
           </Routes>
         </div>
         <Footer />
+
+        <FloatingTimers
+          activeActivities={activeActivities}
+          onTimeUpdate={updateRemainingTime}
+          onComplete={removeCompletedActivity}
+        />
       </div>
+
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 2500,
+          style: {
+            zIndex: 999,
+          },
         }}
       />
     </BrowserRouter>
